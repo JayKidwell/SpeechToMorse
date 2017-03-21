@@ -56,11 +56,20 @@ public class Translate {
 	public static String letter, morseSentence;
 
 	public static void main(String[] args) throws Exception {
-		
-
 		// 
 		Process p;
 		String ogSentence = "";
+		//
+		// debug
+		//
+		System.out.println("call google cloud speech api to convert the flac file to text...");
+	    ogSentence =  googleTranslate("/home/pi/test.flac");
+	    //ogSentence =  googleTranslate("C:\\Users\\Don\\Documents\\repos\\SpeechToMorse\\resources\\test.flac");
+		System.out.println("result=" + ogSentence );
+	    //
+	    //
+	    //
+	    //
 		// get a handle to the GPIO controller
 		GpioController gpio = GpioFactory.getInstance();
 		// creating the pin with parameter PinState.HIGH
@@ -363,7 +372,8 @@ public class Translate {
 	  //
 	  public static String googleTranslate( String fileName ) throws Exception {
 		// Instantiates a client
-		  String result2= "";
+			System.out.println("googleTranslate, 100");
+			String result2= "";
 		    SpeechClient speech = SpeechClient.create();
 
 		    // The path to the audio file to transcribe
@@ -375,20 +385,24 @@ public class Translate {
 		    ByteString audioBytes = ByteString.copyFrom(data);
 
 		    // Builds the sync recognize request
+			System.out.println("googleTranslate, 200");
 		    RecognitionConfig config = RecognitionConfig.newBuilder()
 		        .setEncoding(AudioEncoding.FLAC)
 		        .setSampleRate(16000)
 		        .build();
 		    RecognitionAudio audio = RecognitionAudio.newBuilder()
-		        .setContent(audioBytes)
+		    	.setUri("gs://cloud-samples-tests/speech/brooklyn.flac")
+		    	//.setContent(audioBytes)
 		        .build();
-
 		    // Performs speech recognition on the audio file
+			System.out.println("googleTranslate, 300");
 		    SyncRecognizeResponse response = speech.syncRecognize(config, audio);
+			System.out.println("googleTranslate, 400");
 		    List<SpeechRecognitionResult> results = response.getResultsList();
 
 		    //System.out.printf("you are here." + results.size());
 
+			System.out.println("googleTranslate, 500");
 		    for (SpeechRecognitionResult result: results) {
 		      List<SpeechRecognitionAlternative> alternatives = result.getAlternativesList();
 		      for (SpeechRecognitionAlternative alternative: alternatives) {
