@@ -59,6 +59,7 @@ public class Translate {
 		
 
 		// 
+		Process p;
 		String ogSentence = "";
 		// get a handle to the GPIO controller
 		GpioController gpio = GpioFactory.getInstance();
@@ -70,11 +71,15 @@ public class Translate {
 		// wait for button to be high (starting state)		
 		while(buttonPin.isLow()){}
 		while(!ogSentence.equals("done")){
+			//
 			// wait for button push
-			System.out.print("Waiting for button push...");
+			//
+			System.out.println("Waiting for button push...");
 			while(buttonPin.isHigh()) {}
+			//
+			System.out.println("Record for 5 seconds...");
 			final JavaSoundRecorder recorder = new JavaSoundRecorder();
-
+			//
 			// creates a new thread that waits for a specified
 			// of time before stopping
 			Thread stopper = new Thread(new Runnable() {
@@ -87,48 +92,36 @@ public class Translate {
 					recorder.finish();
 				}
 			});
-
 			stopper.start();
-
 			// start recording
-			recorder.start();
-			
-			//recorder.wait();
-			
+			recorder.start();			
 			Thread.sleep(6000);
-			System.out.println("done");
+			p = Runtime.getRuntime().exec("aplay /home/pi/test.wav");
+		    p.waitFor();
+		    p.destroy();
 			//
-			// shell out to aconv
-			Process p;
+			// convert the test.wav file to a test.flac file for google translate api
+			//
+			System.out.println("convert the test.wav file to a test.flac file...");
 			p = Runtime.getRuntime().exec("avconv -i /home/pi/test.wav -loglevel panic -y -ar 16000 -ac 1 -acodec flac /home/pi/test.flac");
 		    p.waitFor();
+		    p.destroy();
 			//
 			// setup google credentials
-//			Process p;
-//			p = Runtime.getRuntime().exec("avconv -i /home/pi/test.wav -loglevel panic -y -ar 16000 -ac 1 -acodec flac /home/pi/test.flac");
+			//Process p;
+//			p = Runtime.getRuntime().exec("export GOOGLE_APPLICATION_CREDENTIALS=/home/pi/piDecoder-f903aadf5183.json");
 //		    p.waitFor();
+//		    p.destroy();
 		    //
 		    // call google api
 		    //
-		    String resultSentence =  googleTranslate("/home/pi/test.flac");
-			
-//			ChannelConfig streamConfig = 
-//			
-//			EncodingConfiguration encodConfig = new EncodingConfiguration();
-//			encodConfig.setChannelConfig(streamConfig);
-//			
-//			FLAC_FileEncoder flacEncoder = new FLAC_FileEncoder();
-//			//flacEncoder.setStreamConfig(streamConfig);
-//	        File inputFile = new File("/home/pi/test.wav");
-//	        File outputFile = new File("/home/pi/test.flac");
-//
-//	        flacEncoder.encode(inputFile, outputFile);
-//	        System.out.println("Done");
-	        
-	        
-	        
-			// get a sentence and translate
-			ogSentence = prompt();
+			System.out.println("call google cloud speech api to convert the flac file to text...");
+		    ogSentence =  googleTranslate("/home/pi/test.flac");
+			//ogSentence = prompt();
+		    //
+		    // call text to morse translation
+		    //
+			System.out.println("call text to morse translation...");
 			translateSentence(ledPin,ogSentence);
 			output(ogSentence);
 		}
