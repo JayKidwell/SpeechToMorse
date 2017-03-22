@@ -1,4 +1,4 @@
-// Imports the Google Cloud client library
+
 import com.google.cloud.speech.spi.v1beta1.SpeechClient;
 import com.google.cloud.speech.v1beta1.RecognitionAudio;
 import com.google.cloud.speech.v1beta1.RecognitionConfig;
@@ -17,7 +17,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 
-//
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
@@ -25,65 +24,32 @@ import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
 
-//import src.JavaSoundRecorder;
-
-//import javaFlacEncoder.EncodingConfiguration;
-//import javaFlacEncoder.EncodingConfiguration.ChannelConfig;
-//import javaFlacEncoder.FLAC_FileEncoder;
-//import javaFlacEncoder.StreamConfiguration;
-//
-//import com.google.cloud.speech.spi.v1beta1.SpeechClient;
-//import com.google.cloud.speech.v1beta1.RecognitionAudio;
-//import com.google.cloud.speech.v1beta1.RecognitionConfig;
-//import com.google.cloud.speech.v1beta1.RecognitionConfig.AudioEncoding;
-//import com.google.cloud.speech.v1beta1.SpeechRecognitionAlternative;
-//import com.google.cloud.speech.v1beta1.SpeechRecognitionResult;
-//import com.google.cloud.speech.v1beta1.SyncRecognizeResponse;
-//import com.google.protobuf.ByteString;
-//
-
 public class Translate {
-//  public static void main(String... args) throws Exception {
-//	  System.out.printf("Transcription: %s%n", googleTranslate("./resources/test.flac"));
-//  }
-  
-  
-  
-  
-
-
 	static Scanner input;
 	public static String letter, morseSentence;
-
+	//
+	// translate speech into morse
+	//
 	public static void main(String[] args) throws Exception {
 		// 
 		Process p;
 		String ogSentence = "";
-		//
-		// debug
-		//
-		System.out.println("call google cloud speech api to convert the flac file to text...");
-	    ogSentence =  googleTranslate("/home/pi/test.flac");
-	    //ogSentence =  googleTranslate("C:\\Users\\Don\\Documents\\repos\\SpeechToMorse\\resources\\test.flac");
-		System.out.println("result=" + ogSentence );
 	    //
-	    //
-	    //
-	    //
+		System.out.println("Configure the input/ouput pins...");
 		// get a handle to the GPIO controller
 		GpioController gpio = GpioFactory.getInstance();
-		// creating the pin with parameter PinState.HIGH
-		// will instantly power up the pin
 		GpioPinDigitalOutput ledPin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01, "PinLED", PinState.LOW);
 		GpioPinDigitalInput buttonPin = gpio.provisionDigitalInputPin(RaspiPin.GPIO_08);
 		input = new Scanner(System.in);
-		// wait for button to be high (starting state)		
+		//
+		// wait for button to be high (starting state)
+		//
 		while(buttonPin.isLow()){}
 		while(!ogSentence.equals("done")){
 			//
 			// wait for button push
 			//
-			System.out.println("Waiting for button push...");
+			System.out.println("Press the button and begin recording after a moment...");
 			while(buttonPin.isHigh()) {}
 			//
 			System.out.println("Record for 5 seconds...");
@@ -105,6 +71,10 @@ public class Translate {
 			// start recording
 			recorder.start();			
 			Thread.sleep(6000);
+			//
+			//
+			//
+			System.out.println("Playback the recording...");
 			p = Runtime.getRuntime().exec("aplay /home/pi/test.wav");
 		    p.waitFor();
 		    p.destroy();
@@ -115,23 +85,17 @@ public class Translate {
 			p = Runtime.getRuntime().exec("avconv -i /home/pi/test.wav -loglevel panic -y -ar 16000 -ac 1 -acodec flac /home/pi/test.flac");
 		    p.waitFor();
 		    p.destroy();
-			//
-			// setup google credentials
-			//Process p;
-//			p = Runtime.getRuntime().exec("export GOOGLE_APPLICATION_CREDENTIALS=/home/pi/piDecoder-f903aadf5183.json");
-//		    p.waitFor();
-//		    p.destroy();
 		    //
 		    // call google api
 		    //
-			System.out.println("call google cloud speech api to convert the flac file to text...");
-		    ogSentence =  googleTranslate("/home/pi/test.flac");
-			//ogSentence = prompt();
+			System.out.println("call google cloud speech REST api to convert the flac file to text...");
+		    ogSentence = SoundFileToText.googleTranslate("/home/pi/","test.flac");
+			System.out.println("I think you said \"" + ogSentence + "\"");
 		    //
 		    // call text to morse translation
 		    //
-			System.out.println("call text to morse translation...");
-			translateSentence(ledPin,ogSentence);
+			System.out.println("start more translate...");
+			textToMorseCode(ledPin,ogSentence);
 			output(ogSentence);
 		}
 		// release the GPIO controller resources
@@ -144,105 +108,105 @@ public class Translate {
 	//  phase 2 - return a string retrieved from a google api call to translate an online sound file
 	//  phase 3 - open a microphone, record a file and translate it to a string
 	//
-	public static String prompt() {
-		return "Lydia";
-		//System.out.print("Enter a sentence to translate: ");
-		//return input.nextLine();		
-	}
+//	public static String prompt() {
+//		return "Lydia";
+//		//System.out.print("Enter a sentence to translate: ");
+//		//return input.nextLine();		
+//	}
 	//
 	// output the sentence to the morse code system
 	//
-	public static void translateSentence(GpioPinDigitalOutput pin, String ogSentence) throws InterruptedException{
+	public static void textToMorseCode(GpioPinDigitalOutput pin, String ogSentence) throws InterruptedException{
 		morseSentence = "";
 
 		for (int x = 0; x < ogSentence.length(); x++) {
 			switch (ogSentence.substring(x, x + 1).toLowerCase()) {
 			case ("a"):
 				letter = ".-";
-			dot(pin);
-			dash(pin);
-			break;
+				dot(pin);
+				dash(pin);
+				break;
 			case ("b"):
 				letter = "-...";
-			dash(pin);
-			dot(pin);
-			dot(pin);
-			dot(pin);
-			break;
+				dash(pin);
+				dot(pin);
+				dot(pin);
+				dot(pin);
+				break;
 			case ("c"):
 				letter = "-.-.";
-			dash(pin);
-			dot(pin);
-			dash(pin);
-			dot(pin);
-			break;
+				dash(pin);
+				dot(pin);
+				dash(pin);
+				dot(pin);
+				break;
 			case ("d"):
 				letter = "-..";
-			dash(pin);
-			dot(pin);
-			dot(pin);
-			break;
+				dash(pin);
+				dot(pin);
+				dot(pin);
+				break;
 			//e is the next letter
 			case ("e"):
 				letter = ".";
-			dot(pin);
-			break;
+				dot(pin);
+				break;
 			case ("f"):
 				letter = "..-.";
-			dot(pin);
-			dot(pin);
-			dash(pin);
-			dot(pin);
-			break;
+				dot(pin);
+				dot(pin);
+				dash(pin);
+				dot(pin);
+				break;
 			case ("g"):
 				letter = "--.";
-			dash(pin);
-			dash(pin);
-			dot(pin);
-			break;
+				dash(pin);
+				dash(pin);
+				dot(pin);
+				break;
 			case ("h"):
 				letter = "....";
-			dot(pin);
-			dot(pin);
-			dot(pin);
-			dot(pin);
-			break;
+				dot(pin);
+				dot(pin);
+				dot(pin);
+				dot(pin);
+				break;
 			case ("i"):
 				letter = "..";
-			dot(pin);
-			dot(pin);
-			break;
+				dot(pin);
+				dot(pin);
+				break;
 			case ("j"):
 				letter = ".---";
-			dot(pin);
-			dash(pin);
-			dash(pin);
-			dash(pin);
-			break;
+				dot(pin);
+				dash(pin);
+				dash(pin);
+				dash(pin);
+				break;
 			case ("k"):
 				letter = "-.-.";
-			dash(pin);
-			dot(pin);
-			dash(pin);
-			dot(pin);
-			break;
+				dash(pin);
+				dot(pin);
+				dash(pin);
+				dot(pin);
+				break;
 			case ("l"):
 				letter = ".-..";
-			dot(pin);
-			dash(pin);
-			dot(pin);
-			dot(pin);
-			break;
+				dot(pin);
+				dash(pin);
+				dot(pin);
+				dot(pin);
+				break;
 			case ("m"):
 				letter = "--";
-			dash(pin);
-			dash(pin);
-			break;
+				dash(pin);
+				dash(pin);
+				break;
 			case ("n"):
 				letter = "-.";
-			dash(pin);
-			dot(pin);
-			break;
+				dash(pin);
+				dot(pin);
+				break;
 			case ("o"):
 				letter = "---";
 			dash(pin);
@@ -361,16 +325,17 @@ public class Translate {
 	}
 
 	private static void space(GpioPinDigitalOutput pin) throws InterruptedException{
-		System.out.println("space  ");
+		System.out.print("space  ");
 		pin.low();
 		Thread.sleep(500);
 	}
 	
 
 	  //
+	  // translate using the google speech java api -- there is a known issue and it freezes
+	// used alternative google REST api
 	  //
-	  //
-	  public static String googleTranslate( String fileName ) throws Exception {
+	  public static String googleApiTranslate( String fileName ) throws Exception {
 		// Instantiates a client
 			System.out.println("googleTranslate, 100");
 			String result2= "";

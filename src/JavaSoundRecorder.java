@@ -8,7 +8,7 @@ import java.io.*;
  */
 public class JavaSoundRecorder {
     // record duration, in milliseconds
-    static final long RECORD_TIME = 5000;  // 1 minute
+    static final long RECORD_TIME = 5000;  // 5 seconds
  
     // path of the wav file
     File wavFile = new File("/home/pi/test.wav");
